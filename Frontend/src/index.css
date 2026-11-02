@@ -1,0 +1,87 @@
+@import url("https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply text-ink-900 font-body antialiased;
+    background-color: #F7FAF7;
+  }
+
+  main {
+    background-color: #F7FAF7;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-display text-ink-900;
+  }
+
+  :focus-visible {
+    outline: 2px solid theme("colors.amber.DEFAULT");
+    outline-offset: 2px;
+  }
+}
+
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply btn bg-brand text-white hover:bg-brand-dark;
+  }
+  .btn-secondary {
+    @apply btn bg-brand-dark text-white hover:bg-brand;
+  }
+  .btn-outline {
+    @apply btn border border-ink-100 text-brand-dark hover:border-brand bg-white;
+  }
+  .btn-ghost {
+    @apply btn text-ink-900 hover:bg-ink-50;
+  }
+  .input {
+    @apply w-full rounded-DEFAULT border border-ink-100 bg-white px-4 py-2.5 text-sm placeholder:text-ink-400 focus:border-brand focus:ring-1 focus:ring-brand outline-none transition-colors;
+  }
+  .label {
+    @apply block text-sm font-medium text-ink-600 mb-1.5;
+  }
+  .card {
+    @apply bg-white border border-ink-100 rounded-lg;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-sm px-2.5 py-1 text-xs font-medium;
+  }
+
+  .scrollbar-hidden {
+    -ms-overflow-style: none;
+  }
+
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .btn {
+    padding-inline: 1rem;
+  }
+
+  .card {
+    max-width: 100%;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    max-width: 100%;
+  }
+}
