@@ -17,6 +17,11 @@ const api = axios.create({
 let isRefreshing = false;
 let refreshQueue = [];
 
+api.interceptors.request.use((config) => {
+  config._authRevision = useAuthStore.getState().authRevision;
+  return config;
+});
+
 const processQueue = (error) => {
   refreshQueue.forEach(({ resolve, reject }) => {
     if (error) reject(error);
@@ -30,6 +35,7 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    if (!originalRequest) return Promise.reject(error);
 
     const isAuthRoute =
       originalRequest.url?.includes("/auth/login") ||
@@ -37,7 +43,10 @@ api.interceptors.response.use(
       originalRequest.url?.includes("/auth/refresh");
 
     if (status === 401 && originalRequest._retry && !isAuthRoute) {
-      useAuthStore.getState().clearAuth();
+      const authStore = useAuthStore.getState();
+      if (originalRequest._authRevision === authStore.authRevision) {
+        authStore.clearAuth();
+      }
       return Promise.reject(error);
     }
 
@@ -59,7 +68,10 @@ api.interceptors.response.use(
       } catch (refreshError) {
         processQueue(refreshError);
         if (refreshError.response?.status === 401 || refreshError.response?.status === 403) {
-          useAuthStore.getState().clearAuth();
+          const authStore = useAuthStore.getState();
+          if (originalRequest._authRevision === authStore.authRevision) {
+            authStore.clearAuth();
+          }
         }
         return Promise.reject(refreshError);
       } finally {

@@ -31,6 +31,19 @@ app.use(
     credentials: true,
   })
 );
+app.use((req, res, next) => {
+  if (["GET", "HEAD", "OPTIONS"].includes(req.method)) return next();
+
+  const origin = req.get("Origin");
+  if (
+    (origin && !isAllowedOrigin(origin)) ||
+    (!origin && req.get("Sec-Fetch-Site") === "cross-site")
+  ) {
+    return res.status(403).json({ success: false, message: "Request origin is not allowed" });
+  }
+
+  return next();
+});
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 app.use(cookieParser());

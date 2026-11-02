@@ -19,12 +19,17 @@ export const initializeSocket = (httpServer) => {
       origin: (origin, callback) => callback(null, isAllowedOrigin(origin)),
       credentials: true,
     },
+    allowRequest: (request, callback) =>
+      callback(null, isAllowedOrigin(request.headers.origin)),
   });
 
   io.use(async (socket, next) => {
     try {
       const token = getCookie(socket.handshake.headers.cookie, "accessToken");
-      if (!token) return next(new Error("Unauthorized socket connection"));
+      if (!token) {
+        console.warn("Socket authentication failed: access token cookie missing");
+        return next(new Error("Unauthorized socket connection"));
+      }
 
       const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET);
       const user = await User.findById(decoded._id).select("_id isBlocked isActive");
@@ -32,7 +37,8 @@ export const initializeSocket = (httpServer) => {
 
       socket.userId = String(user._id);
       next();
-    } catch {
+    } catch (error) {
+      console.warn("Socket authentication failed:", error.name);
       next(new Error("Unauthorized socket connection"));
     }
   });

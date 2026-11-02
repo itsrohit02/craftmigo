@@ -16,7 +16,20 @@ import {
 const cookieOptions = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
-  sameSite: "lax",
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+  path: "/",
+};
+
+const tokenCookieOptions = (token) => {
+  const payload = jwt.decode(token);
+  if (!payload || typeof payload !== "object" || typeof payload.exp !== "number") {
+    throw new Error("Generated authentication token is missing its expiration");
+  }
+
+  return {
+    ...cookieOptions,
+    maxAge: Math.max(0, payload.exp * 1000 - Date.now()),
+  };
 };
 
 const createEmailVerificationCode = async (user) => {
@@ -109,9 +122,9 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
-    .cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
-    .json(new ApiResponse(200, { user: safeUser, accessToken }, "Email verified successfully"));
+    .cookie("accessToken", accessToken, tokenCookieOptions(accessToken))
+    .cookie("refreshToken", refreshToken, tokenCookieOptions(refreshToken))
+    .json(new ApiResponse(200, { user: safeUser }, "Email verified successfully"));
 });
 
 export const login = asyncHandler(async (req, res) => {
@@ -127,9 +140,9 @@ export const login = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
-    .cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
-    .json(new ApiResponse(200, { user: safeUser, accessToken }, "Login successful"));
+    .cookie("accessToken", accessToken, tokenCookieOptions(accessToken))
+    .cookie("refreshToken", refreshToken, tokenCookieOptions(refreshToken))
+    .json(new ApiResponse(200, { user: safeUser }, "Login successful"));
 });
 
 export const logout = asyncHandler(async (req, res) => {
@@ -143,8 +156,7 @@ export const logout = asyncHandler(async (req, res) => {
 });
 
 export const refreshAccessToken = asyncHandler(async (req, res) => {
-  const incomingRefreshToken =
-    req.cookies?.refreshToken || req.body?.refreshToken;
+  const incomingRefreshToken = req.cookies?.refreshToken;
 
   if (!incomingRefreshToken) {
     throw new ApiError(401, "Refresh token missing");
@@ -158,7 +170,7 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
   }
 
   const user = await User.findById(decoded._id).select("+refreshToken");
-  if (!user || user.refreshToken !== incomingRefreshToken) {
+  if (!user || user.isBlocked || !user.isActive || user.refreshToken !== incomingRefreshToken) {
     throw new ApiError(401, "Refresh token is invalid or has been used");
   }
 
@@ -166,9 +178,9 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
-    .cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
-    .json(new ApiResponse(200, { accessToken }, "Access token refreshed"));
+    .cookie("accessToken", accessToken, tokenCookieOptions(accessToken))
+    .cookie("refreshToken", refreshToken, tokenCookieOptions(refreshToken))
+    .json(new ApiResponse(200, null, "Access token refreshed"));
 });
 
 export const getCurrentUser = asyncHandler(async (req, res) => {
@@ -208,9 +220,9 @@ export const changePassword = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .cookie("accessToken", accessToken, { ...cookieOptions, maxAge: 15 * 60 * 1000 })
-    .cookie("refreshToken", refreshToken, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 })
-    .json(new ApiResponse(200, { accessToken }, "Password changed successfully"));
+    .cookie("accessToken", accessToken, tokenCookieOptions(accessToken))
+    .cookie("refreshToken", refreshToken, tokenCookieOptions(refreshToken))
+    .json(new ApiResponse(200, null, "Password changed successfully"));
 });
 
 export const requestPasswordReset = asyncHandler(async (req, res) => {

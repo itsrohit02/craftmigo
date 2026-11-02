@@ -14,6 +14,9 @@ let chatSocket;
 export const connectChatSocket = () => {
   if (!chatSocket) {
     chatSocket = io(socketURL, { withCredentials: true, autoConnect: false });
+    chatSocket.on("connect_error", (error) => {
+      console.warn("Chat socket connection failed:", error.message);
+    });
   }
   if (!chatSocket.connected) chatSocket.connect();
   return chatSocket;
