@@ -2,14 +2,18 @@ export const resolveApiBaseUrl = (configuredUrl, { isProduction }) => {
   const value = typeof configuredUrl === "string" ? configuredUrl.trim() : "";
 
   if (!value) {
-    throw new Error("VITE_API_URL must be set to the HTTPS backend API URL ending in /api.");
+    throw new Error("VITE_API_URL must be set to an HTTPS backend API URL ending in /api or the same-origin /api path.");
+  }
+
+  if (value === "/api" || value === "/api/") {
+    return "/api";
   }
 
   let url;
   try {
     url = new URL(value);
   } catch {
-    throw new Error("VITE_API_URL must be an absolute backend API URL ending in /api.");
+    throw new Error("VITE_API_URL must be an absolute backend API URL ending in /api or the same-origin /api path.");
   }
 
   if (
@@ -35,7 +39,14 @@ export const resolveApiBaseUrl = (configuredUrl, { isProduction }) => {
   return url.toString().replace(/\/$/, "");
 };
 
-export const getSocketBaseUrl = (apiBaseUrl) => {
+export const getSocketBaseUrl = (apiBaseUrl, pageOrigin) => {
+  if (apiBaseUrl.startsWith("/")) {
+    if (!pageOrigin) {
+      throw new Error("A page origin is required when the API URL is same-origin.");
+    }
+    return new URL("/", pageOrigin).origin;
+  }
+
   const url = new URL(apiBaseUrl);
   url.pathname = url.pathname.replace(/\/api$/, "");
   return url.toString().replace(/\/$/, "");

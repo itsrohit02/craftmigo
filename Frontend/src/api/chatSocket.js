@@ -7,7 +7,10 @@ const apiBaseUrl = resolveApiBaseUrl(
     isProduction: import.meta.env.PROD,
   }
 );
-const socketURL = getSocketBaseUrl(apiBaseUrl);
+const socketURL = getSocketBaseUrl(
+  apiBaseUrl,
+  typeof window === "undefined" ? undefined : window.location.origin
+);
 
 let chatSocket;
 
