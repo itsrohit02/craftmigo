@@ -11,13 +11,14 @@ const VerifyEmailPage = () => {
   const [searchParams] = useSearchParams();
   const [email, setEmail] = useState(searchParams.get("email") || "");
   const [otp, setOtp] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isResending, setIsResending] = useState(false);
   const verifyEmail = useAuthStore((state) => state.verifyEmail);
   const navigate = useNavigate();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setLoading(true);
+    setIsVerifying(true);
     try {
       const user = await verifyEmail({ email, otp });
       toast.success("Email verified successfully");
@@ -25,7 +26,7 @@ const VerifyEmailPage = () => {
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not verify email");
     } finally {
-      setLoading(false);
+      setIsVerifying(false);
     }
   };
 
@@ -35,14 +36,14 @@ const VerifyEmailPage = () => {
       return;
     }
 
-    setLoading(true);
+    setIsResending(true);
     try {
       const response = await authService.resendEmailVerificationCode(email);
       toast.success(response.message || "If your account needs verification, a new code has been sent");
     } catch (error) {
       toast.error(error.response?.data?.message || "Could not resend verification code");
     } finally {
-      setLoading(false);
+      setIsResending(false);
     }
   };
 
@@ -88,18 +89,18 @@ const VerifyEmailPage = () => {
             onChange={(event) => setOtp(event.target.value.replace(/\D/g, ""))}
           />
         </div>
-        <button type="submit" disabled={loading} className="btn-primary w-full">
-          {loading ? "Verifying..." : "Verify email"}
+        <button type="submit" disabled={isVerifying} className="btn-primary w-full">
+          {isVerifying ? "Verifying..." : "Verify email"}
         </button>
       </form>
 
       <button
         type="button"
         onClick={handleResend}
-        disabled={loading}
+        disabled={isResending}
         className="mt-4 text-sm font-medium text-denim hover:underline disabled:opacity-50"
       >
-        Resend verification code
+        {isResending ? "Sending..." : "Resend verification code"}
       </button>
 
       <p className="mt-6 text-center text-sm text-ink-400">
